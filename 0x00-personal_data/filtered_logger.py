@@ -3,8 +3,10 @@
 """
 
 import logging
+import os
 import re
 from typing import List
+import mysql.connector
 
 patterns = {
     'extract': lambda x, y: r'(?P<field>{})=[^{}]*'.format('|'.join(x), y),
@@ -17,12 +19,6 @@ PII_FIELDS = ("name", "email", "phone", "ssn", "password")
 
 class RedactingFormatter(logging.Formatter):
     """ Redacting Formatter class
-
-    Update the class to accept a list of strings fields constructor argument.
-    Implement the format method to filter values in incoming log records using
-    filter_datum. Values for fields in fields should be filtered.
-    DO NOT extrapolate FORMAT manually. The format method should be less than
-    5 lines long.
     """
 
     REDACTION = "***"
@@ -59,18 +55,6 @@ def filter_datum(
         fields: List[str], redaction: str, message: str, separator: str,
 ) -> str:
     """Returns the log message with certain fields obfuscated.
-
-    Args:
-        fields (List[str]): a list of strings representing all fields to
-        obfuscate.
-        redaction (str): a string representing by what the field will be
-        obfuscated.
-        message (str): a string representing the log line.
-        separator (str): a string representing by which character is separating
-        all fields in the log line (message).
-
-    Returns:
-        str: the log message obfuscated.
     """
     extract, replace = (patterns["extract"], patterns["replace"])
     return re.sub(extract(fields, separator), replace(redaction), message)
@@ -85,5 +69,25 @@ def get_logger() -> logging.Logger:
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(RedactingFormatter(list(PII_FIELDS)))
     logger.addHandler(stream_handler)
-    
+
     return logger
+
+def get_db() -> mysql.connector.connection.MySQLConnection:
+    """Returns a connector to the database
+    (mysql.connector.connection.MySQLConnection object).
+    """
+    # Get the environment variables for the database credentials
+    db_host = os.getenv("PERSONAL_DATA_DB_HOST", "localhost")
+    #  OR db_name = os.environ.get('PERSONAL_DATA_DB_USERNAME', 'root')
+    db_name = os.getenv("PERSONAL_DATA_DB_NAME", "")
+    db_user = os.getenv("PERSONAL_DATA_DB_USERNAME", "root")
+    db_pwd = os.getenv("PERSONAL_DATA_DB_PASSWORD", "")
+    # Connect to the database using the obtained credentials
+    connection = mysql.connector.connect(
+        host=db_host,
+        port=3306,
+        user=db_user,
+        password=db_pwd,
+        database=db_name,
+    )
+    return connection
