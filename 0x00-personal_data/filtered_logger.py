@@ -11,6 +11,9 @@ patterns = {
     'replace': lambda x: r'\g<field>={}'.format(x),
 }
 
+# Tuple of PII fields
+PII_FIELDS = ("name", "email", "phone", "ssn", "password")
+
 
 class RedactingFormatter(logging.Formatter):
     """ Redacting Formatter class
@@ -71,3 +74,35 @@ def filter_datum(
     """
     extract, replace = (patterns["extract"], patterns["replace"])
     return re.sub(extract(fields, separator), replace(redaction), message)
+
+
+def get_logger() -> logging.Logger:
+    """Returns a logging.Logger object named "user_data".
+
+    The logger should be named "user_data" and only log up to logging.INFO
+    level.
+    It should not propagate messages to other loggers. It should have a
+    StreamHandler with RedactingFormatter as formatter.
+    Create a tuple PII_FIELDS constant at the root of the module containing
+    the fields from user_data.csv that are considered PII. PII_FIELDS can
+    contain only 5 fields - choose the right list of fields that can are
+    considered as “important” PIIs or information that you must hide in your
+    logs. Use it to parameterize the formatter.
+
+    Returns:
+        logging.Logger: A logging.Logger instance.
+    """
+    # Create a logger with the specified name
+    logger = logging.getLogger("user_data")
+    # Set the logging level to only log messages up to logging.INFO
+    logger.setLevel(logging.INFO)
+    # Create a StreamHandler to output log messages to the console
+    stream_handler = logging.StreamHandler()
+    # Disable propagation of log messages to other loggers
+    logger.propagate = False
+    # Create an instance of the RedactingFormatter class with the PII_FIELDS,
+    # as fields and set the formatter of the handler
+    stream_handler.setFormatter(RedactingFormatter(PII_FIELDS))
+    # Add the handler to the logger
+    logger.addHandler(stream_handler)
+    return logger
