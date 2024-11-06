@@ -91,3 +91,32 @@ def get_db() -> mysql.connector.connection.MySQLConnection:
         database=db_name,
     )
     return connection
+
+
+
+def main() -> None:
+    """
+    Obtain a database connection using get_db and retrieves all rows
+    in the users table and display each row under a filtered format
+    """
+    # Obtain a logger and set the logging level
+    logger = get_logger()
+    logger.setLevel(logging.INFO)
+
+    # Obtain a database connection
+    db = get_db()
+    cursor = db.cursor()
+
+    # Retrieve all rows in the users table
+    cursor.execute("SELECT * FROM users")
+    rows = cursor.fetchall()
+
+    # Display each row under a filtered format
+    for row in rows:
+        message = "; ".join([f"{field}={row[field]}" for field in row.keys()])
+        logger.info(filter_datum(PII_FIELDS, RedactingFormatter.REDACTION,
+                                 message, RedactingFormatter.SEPARATOR))
+
+
+if __name__ == "__main__":
+    main()
