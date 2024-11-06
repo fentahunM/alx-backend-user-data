@@ -2,7 +2,6 @@
 """Module for encrypting passwords.
 """
 
-import logging
 import bcrypt
 
 
@@ -15,8 +14,4 @@ def hash_password(password: str) -> bytes:
 
 def is_valid(hashed_password: bytes, password: str) -> bool:
     """ Validates the provided password matches the hashed password """
-    valid = False
-    encoded = password.encode()
-    if bcrypt.checkpw(encoded, hashed_password):
-        valid = True
-    return valid
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_password)
